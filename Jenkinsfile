@@ -29,7 +29,7 @@ pipeline {
 
         stage('Plan Destroy') {
             steps {
-                sh 'terraform plan -destroy'
+                sh 'terraform plan -destroy -target=aws_instance.target'
             }
         }
 
@@ -41,7 +41,7 @@ pipeline {
 
         stage('Destroy Instance') {
             steps {
-                sh 'terraform destroy -auto-approve'
+                sh 'terraform destroy -target=aws_instance.target -auto-approve'
             }
         }
     }
