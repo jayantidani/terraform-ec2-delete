@@ -7,6 +7,12 @@ pipeline {
 
     stages {
 
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/jayantidani/terraform-ec2-delete.git'
+            }
+        }
+
         stage('Terraform Init') {
             steps {
                 sh 'terraform init'
@@ -15,25 +21,27 @@ pipeline {
 
         stage('Import Instance') {
             steps {
-                sh "terraform import aws_instance.target ${INSTANCE_ID}"
+                sh """
+                terraform import aws_instance.target ${INSTANCE_ID}
+                """
             }
         }
 
         stage('Plan Destroy') {
             steps {
-                sh "terraform plan -destroy"
+                sh 'terraform plan -destroy'
             }
         }
 
         stage('Manual Approval') {
             steps {
-                input message: "Do you really want to delete EC2 instance ${INSTANCE_ID}?"
+                input message: "⚠️ Do you really want to delete EC2 instance ${INSTANCE_ID}?"
             }
         }
 
         stage('Destroy Instance') {
             steps {
-                sh "terraform destroy -auto-approve"
+                sh 'terraform destroy -auto-approve'
             }
         }
     }
