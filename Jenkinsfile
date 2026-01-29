@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'INSTANCE_ID', description: 'Enter EC2 Instance ID to delete')
+        string(name: 'INSTANCE_ID', defaultValue: '', description: 'Enter EC2 Instance ID to delete')
     }
 
     stages {
@@ -21,27 +21,33 @@ pipeline {
 
         stage('Import Instance') {
             steps {
-                sh """
-                terraform import aws_instance.target ${INSTANCE_ID}
-                """
+                sh '''
+                echo "Checking Terraform state..."
+                if terraform state list | grep -q aws_instance.target; then
+                    echo "Instance already imported. Skipping import."
+                else
+                    echo "Importing instance..."
+                    terraform import aws_instance.target ${INSTANCE_ID}
+                fi
+                '''
             }
         }
 
         stage('Plan Destroy') {
             steps {
-                sh 'terraform plan -destroy -target=aws_instance.target'
+                sh 'terraform plan -destroy'
             }
         }
 
         stage('Manual Approval') {
             steps {
-                input message: "⚠️ Do you really want to delete EC2 instance ${INSTANCE_ID}?"
+                input message: "Do you really want to DELETE EC2 instance ${INSTANCE_ID}?"
             }
         }
 
         stage('Destroy Instance') {
             steps {
-                sh 'terraform destroy -target=aws_instance.target -auto-approve'
+                sh 'terraform destroy -auto-approve'
             }
         }
     }
